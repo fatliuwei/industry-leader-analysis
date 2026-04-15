@@ -1,271 +1,432 @@
 # 申万行业龙头股分析 Skill
 
-## 简介
+## 触发词
 
-这是一个用于获取和分析申万行业分类及其龙头股的专业工具。支持自动化获取511个申万行业（L1/L2/L3级）的龙头股数据，包括市值、ROE、净利率等关键财务指标，并生成详细的分析报告。
+当用户提到以下关键词时激活本技能：
+- 行业龙头、龙头股、行业分析、申万行业、行业分类
+- 财务报表、财报下载、年报下载、季报下载
+- 行业数据获取、行业轮动、ROE筛选
+- 定时下载报表、自动下载财报
 
-## 功能特性
+---
 
-### 核心功能
-- ✅ **行业数据获取**: 自动获取申万2021分类体系（31个L1级、134个L2级、346个L3级行业）
-- ✅ **龙头股识别**: 通过市值、ROE等指标识别行业龙头股
-- ✅ **财务数据分析**: 获取总市值、ROE、净利率、营收增长等关键指标
-- ✅ **智能补充机制**: 三层数据补充（成分股数据 → 关键词匹配 → 智能搜索）
-- ✅ **分析报告生成**: 自动生成CSV、Excel和Markdown格式报告
-- ✅ **定时任务支持**: 支持配置定时更新数据
+## 功能概览
 
-### 数据覆盖率
-- **L1级行业**: 100% (31/31)
-- **L2级行业**: 97% (130/134)
-- **L3级行业**: 69% (239/346)
-- **总体覆盖率**: 78.3% (400/511)
+| 功能 | 触发方式 | 核心命令 |
+|------|---------|---------|
+| 行业分类获取 | 对话/CLI/API | `python src/cli.py fetch` |
+| 龙头股分析 | 对话/CLI/API | `python src/cli.py analyze` |
+| 报告生成 | 对话/CLI | `python src/cli.py report` |
+| 财务报表PDF下载 | 对话/CLI | `python src/financial_report_downloader.py` |
+| 定时任务 | 对话/automation | `automation_update` 工具 |
 
-## 安装要求
+---
 
-### 依赖项
+## 功能1: 行业数据获取
+
+### 说明
+获取申万2021分类体系的行业列表（L1/L2/L3级）。
+
+### 使用方式
+
+#### 方式A: 对话触发（AI自动执行）
+```
+用户: "获取申万行业分类数据"
+用户: "帮我获取最新的行业列表"
+```
+AI将自动运行 `python src/cli.py fetch --output industry_data/`
+
+#### 方式B: 命令行
 ```bash
-pip install tushare
-pip install pandas
-pip install openpyxl
+# 获取行业数据，保存到指定目录
+python src/cli.py fetch --output industry_data/
+
+# 等同于
+python src/cli.py fetch -o industry_data/
 ```
 
-### Tushare权限
-- 基础功能: 免费账户即可使用
-- 高级功能: 建议积分≥2000（捐赠升级）
-- 同花顺数据: 需要6000积分
-
-## 快速开始
-
-### 1. 基础使用
-
+#### 方式C: Python API
 ```python
 from src.industry_analyzer import IndustryAnalyzer
 
-# 初始化分析器
 analyzer = IndustryAnalyzer()
+l1_df, l2_df, l3_df = analyzer.get_industry_classification()
+```
 
-# 获取所有行业龙头股数据
+### 输出
+```
+industry_data/
+├── 申万一级行业_20260415.csv   # 31个一级行业
+├── 申万二级行业_20260415.csv   # 134个二级行业
+└── 申万三级行业_20260415.csv   # 346个三级行业
+```
+
+---
+
+## 功能2: 龙头股分析
+
+### 说明
+识别511个申万行业的龙头股，获取市值、ROE、净利率等关键指标。
+
+### 使用方式
+
+#### 方式A: 对话触发
+```
+用户: "分析行业龙头股"
+用户: "帮我找出各行业龙头"
+用户: "ROE最高的行业龙头有哪些"
+```
+
+#### 方式B: 命令行
+```bash
+# 完整分析所有行业，生成报告
+python src/cli.py analyze --output reports/
+
+# 等同于
+python src/cli.py analyze -o reports/
+```
+
+#### 方式C: Python API
+```python
+from src.industry_analyzer import IndustryAnalyzer
+
+analyzer = IndustryAnalyzer(output_dir='reports')
+
+# 完整分析
 result = analyzer.analyze_all_industries()
 
-# 生成报告
-analyzer.generate_report(result, output_dir='reports/')
-```
+# 按级别获取TOP N
+l1_top10 = analyzer.get_leaders_by_level(level='L1', top_n=10, sort_by='市值')
 
-### 2. 定时任务配置
-
-创建定时任务，每天/每周自动更新数据：
-
-```yaml
-# automation/schedule.yaml
-name: 行业龙头股数据更新
-schedule: "0 18 * * *"  # 每天18:00执行
-prompt: |
-  更新申万行业龙头股数据
-  1. 获取最新的行业分类和成分股数据
-  2. 更新龙头股市值和财务指标
-  3. 生成分析报告并保存到 reports/ 目录
-cwds: ["d:/tonghuashun"]
-```
-
-### 3. 命令行使用
-
-```bash
-# 获取行业数据
-python src/cli.py --mode fetch --output industry_data/
-
-# 分析龙头股
-python src/cli.py --mode analyze --input industry_data/ --output reports/
-
-# 生成报告
-python src/cli.py --mode report --input reports/ --format all
-```
-
-## 使用场景
-
-### 场景1: 行业配置策略
-筛选大市值行业龙头，用于宏观行业配置决策。
-
-```python
-# 获取L1级行业龙头（市值TOP 10）
-l1_leaders = analyzer.get_leaders_by_level('L1', top_n=10, sort_by='市值')
-```
-
-### 场景2: ROE选股策略
-寻找高ROE行业，挖掘盈利能力强的赛道。
-
-```python
-# 筛选ROE>30%的行业
+# 按ROE筛选
 high_roe = analyzer.filter_industries(roe_min=30.0)
+
+# 生成报告
+files = analyzer.generate_report(result)
 ```
 
-### 场景3: 定期数据更新
-配置定时任务，定期更新数据。
+### 输出
+```
+reports/
+├── 申万行业龙头股分析_20260415_180000.csv    # CSV数据
+├── 申万行业龙头股分析_20260415_180000.xlsx    # Excel数据
+└── 行业分析报告_20260415_180000.md            # Markdown报告
+```
 
+### 数据字段
+
+| 字段 | 说明 |
+|------|------|
+| 行业代码 | 申万行业指数代码 |
+| 行业名称 | 申万行业名称 |
+| 行业级别 | L1/L2/L3 |
+| 龙头股代码 | 龙头股股票代码 |
+| 龙头股名称 | 龙头股名称 |
+| 总市值(亿元) | 最新总市值 |
+| ROE(%) | 净资产收益率 |
+| 净利率(%) | 净利率 |
+| 推荐理由 | 推荐依据 |
+| 数据来源 | 成分股数据/关键词匹配/智能搜索 |
+
+---
+
+## 功能3: 报告生成
+
+### 说明
+基于已有数据生成Markdown或纯文本分析报告。
+
+### 使用方式
+
+#### 方式A: 对话触发
+```
+用户: "生成分析报告"
+用户: "帮我生成行业分析报告"
+```
+
+#### 方式B: 命令行
+```bash
+# 生成所有格式报告
+python src/cli.py report --output reports/
+
+# 只生成Markdown报告
+python src/cli.py report --format markdown
+
+# 只生成总结
+python src/cli.py report --format summary
+
+# 指定输入数据文件
+python src/cli.py report --input reports/申万行业龙头股分析_20260415.csv
+```
+
+---
+
+## 功能4: 财务报表PDF下载
+
+### 说明
+从巨潮资讯网（证监会指定信息披露平台）下载上市公司财务报表PDF文件。
+
+### 使用方式
+
+#### 方式A: 对话触发
+```
+用户: "下载贵州茅台的年报"
+用户: "帮我下载银行业所有公司的财报"
+用户: "下载龙头股的最新季度报告"
+用户: "定时下载财务报表"
+```
+
+#### 方式B: 命令行（最常用）
+```bash
+# ============ 按股票代码下载 ============
+
+# 下载单只股票最新年报
+python src/financial_report_downloader.py --stock 600519 --report-type annual --latest
+
+# 下载多只股票最新年报+半年报
+python src/financial_report_downloader.py --stock 600519 000858 --report-type annual semi --latest
+
+# 下载指定年份的报告
+python src/financial_report_downloader.py --stock 600519 --report-type annual --year 2024 2025
+
+# 下载所有类型报告（年报+半年报+一季报+三季报）
+python src/financial_report_downloader.py --stock 600519 --report-type all --latest
+
+# 指定输出目录
+python src/financial_report_downloader.py --stock 600519 --report-type annual --latest --output ./my_reports
+
+
+# ============ 按申万行业批量下载 ============
+
+# 下载银行业所有公司最新年报
+python src/financial_report_downloader.py --industry 银行 --report-type annual --latest
+
+# 下载电子行业所有类型报告
+python src/financial_report_downloader.py --industry 电子 --report-type all --latest
+
+# 下载医药生物行业2024年年报
+python src/financial_report_downloader.py --industry 医药生物 --report-type annual --year 2024
+
+
+# ============ 按公司名称下载（需TUSHARE_TOKEN） ============
+
+# 通过公司名称下载（需要配置TUSHARE_TOKEN环境变量）
+python src/financial_report_downloader.py --stock 贵州茅台 --report-type annual --latest
+```
+
+#### 方式C: Python API
 ```python
-# 使用automation_update工具创建定时任务
-from codebuddy import automation_update
+from src.financial_report_downloader import CNINFOClient, download_reports, resolve_stock_codes
 
+# 初始化客户端
+client = CNINFOClient()
+
+# 解析股票
+stocks = resolve_stock_codes(stock_args=["600519"], industry_arg=None)
+
+# 执行下载
+result = download_reports(
+    client=client,
+    stocks=stocks,
+    report_types=["annual"],
+    year_range=("2025", "2025"),
+    output_dir="financial_reports/"
+)
+
+print(f"下载: {result.downloaded}, 跳过: {result.skipped}, 失败: {result.failed}")
+```
+
+### 参数说明
+
+| 参数 | 必填 | 说明 | 示例 |
+|------|------|------|------|
+| `--stock` | 二选一 | 股票代码（6位）或公司名称 | `600519` 或 `贵州茅台` |
+| `--industry` | 二选一 | 申万一级行业名称 | `银行` `电子` `医药生物` |
+| `--report-type` | 否 | 报告类型，默认annual | `annual` `semi` `q1` `q3` `all` |
+| `--year` | 否 | 年份范围 | `2025` 或 `2023 2025` |
+| `--latest` | 否 | 只下载最近一年 | 无需值 |
+| `--output` | 否 | 输出目录 | `./my_reports` |
+| `--delay` | 否 | 请求间隔秒数 | `1.0` |
+
+### 报告类型对照
+
+| 参数值 | 说明 | 巨潮分类代码 |
+|--------|------|-------------|
+| `annual` | 年度报告 | ndbg_szsh |
+| `semi` | 半年度报告 | bdbg_szsh |
+| `q1` | 第一季度报告 | jdbg_szsh |
+| `q3` | 第三季度报告 | jdbg_szsh |
+| `all` | 全部类型 | - |
+
+### 输出目录结构
+```
+financial_reports/
+├── 贵州茅台_600519/
+│   ├── 年报/
+│   │   └── 贵州茅台_600519_20260410_2025年年度报告.pdf
+│   ├── 半年报/
+│   ├── 一季报/
+│   └── 三季报/
+├── 五粮液_000858/
+│   └── 年报/
+└── banking/                    # 按行业下载时
+    ├── 工商银行_601398/
+    └── 招商银行_600036/
+```
+
+### 特性
+- 断点续传：跳过已下载文件
+- 自动重试：网络错误自动重试3次
+- 请求限速：默认0.6秒间隔，避免被封IP
+
+---
+
+## 功能5: 定时任务
+
+### 说明
+配置定时任务，自动执行行业数据更新和财务报表下载。
+
+### 使用方式
+
+#### 方式A: 对话触发（CodeBuddy/Claude Code环境）
+```
+用户: "创建一个每天更新行业数据的定时任务"
+用户: "设置每周六下载龙头股财报"
+用户: "每月1号帮我下载银行业年报"
+```
+AI将调用 `automation_update` 工具创建任务。
+
+#### 方式B: 使用automation_update工具
+```python
+# 创建每日行业数据更新任务
 automation_update(
     mode="suggested create",
-    name="行业龙头股数据更新",
-    prompt="更新申万行业龙头股数据并生成报告",
+    name="行业龙头股每日更新",
+    prompt="执行行业龙头股数据更新：运行 python src/cli.py analyze --output reports/",
     scheduleType="recurring",
-    rrule="FREQ=WEEKLY;BYDAY=MO;BYHOUR=18;BYMINUTE=0",
-    cwds=["d:/tonghuashun"],
+    rrule="FREQ=DAILY;BYHOUR=18;BYMINUTE=0",
+    cwds=["d:/tonghuashun/skills/申万行业龙头股分析"],
+    status="ACTIVE"
+)
+
+# 创建每周六下载龙头股财报任务
+automation_update(
+    mode="suggested create",
+    name="龙头股财报周下载",
+    prompt="执行龙头股财报下载：python src/financial_report_downloader.py --stock 600519 000858 000333 --report-type all --latest --output financial_reports/leaders/",
+    scheduleType="recurring",
+    rrule="FREQ=WEEKLY;BYDAY=SAT;BYHOUR=22;BYMINUTE=0",
+    cwds=["d:/tonghuashun/skills/申万行业龙头股分析"],
+    status="ACTIVE"
+)
+
+# 创建一次性任务
+automation_update(
+    mode="suggested create",
+    name="2025年报批量下载",
+    prompt="下载所有申万一级行业2025年年报：python src/financial_report_downloader.py --industry 银行 --report-type annual --year 2025 --output financial_reports/annual_2025/banking/",
+    scheduleType="once",
+    scheduledAt="2026-05-15T02:00",
+    cwds=["d:/tonghuashun/skills/申万行业龙头股分析"],
     status="ACTIVE"
 )
 ```
 
-## 输出文件
+### 预设定时任务模板
 
-### 数据文件
-- `申万行业龙头股分析_YYYYMMDD_HHMMSS.csv` - CSV格式数据
-- `申万行业龙头股分析_YYYYMMDD_HHMMSS.xlsx` - Excel格式数据
-
-### 分析报告
-- `行业龙头股深度分析报告_YYYYMMDD_HHMMSS.md` - 详细分析报告
-- `分析总结_YYYYMMDD_HHMMSS.txt` - 核心发现总结
-
-### 基础数据
-- `申万一级行业_YYYYMMDD.csv` - 31个一级行业列表
-- `申万二级行业_YYYYMMDD.csv` - 134个二级行业列表
-- `申万三级行业_YYYYMMDD.csv` - 346个三级行业列表
-
-## 数据字段说明
-
-| 字段名 | 类型 | 说明 |
-|-------|------|------|
-| 行业代码 | string | 申万行业指数代码 |
-| 行业名称 | string | 申万行业名称 |
-| 行业级别 | string | L1/L2/L3 |
-| 龙头股代码 | string | 龙头股股票代码 |
-| 龙头股名称 | string | 龙头股名称 |
-| 总市值(亿元) | float | 最新总市值 |
-| ROE(%) | float | 净资产收益率 |
-| 净利率(%) | float | 净利率 |
-| 推荐理由 | string | 推荐依据 |
-| 数据来源 | string | 成分股数据/关键词匹配/智能搜索 |
-
-## 高级功能
-
-### 1. 智能搜索补充
-对于API数据缺失的新兴行业，通过智能搜索补充龙头股。
-
-```python
-analyzer.enable_smart_search = True
-analyzer.smart_search_industries = ['医疗美容', '旅游零售', '社交']
-```
-
-### 2. 自定义关键词匹配
-添加自定义行业关键词映射。
-
-```python
-analyzer.add_custom_keywords({
-    '新兴行业': ['关键词1', '关键词2']
-})
-```
-
-### 3. 数据验证
-自动验证数据的准确性和完整性。
-
-```python
-validation_result = analyzer.validate_data(result)
-print(validation_result.summary())
-```
-
-## 定时任务示例
-
-### 每日更新
-```yaml
-name: 每日行业数据更新
-schedule: "FREQ=DAILY;BYHOUR=18;BYMINUTE=0"
-prompt: |
-  执行每日行业龙头股数据更新任务：
-  1. 获取最新市值数据
-  2. 更新财务指标
-  3. 生成当日报告
-```
-
-### 每周深度分析
-```yaml
-name: 每周深度分析
-schedule: "FREQ=WEEKLY;BYDAY=SUN;BYHOUR=20;BYMINUTE=0"
-prompt: |
-  执行每周深度分析任务：
-  1. 完整更新所有行业数据
-  2. 进行行业对比分析
-  3. 生成周度分析报告
-  4. 发送报告摘要
-```
-
-### 月度财报更新
-```yaml
-name: 月度财报数据更新
-schedule: "FREQ=MONTHLY;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0"
-prompt: |
-  执行月度财报更新任务：
-  1. 获取最新季报数据
-  2. 更新ROE、净利率等指标
-  3. 对比上月数据变化
-  4. 生成月度报告
-```
-
-## 注意事项
-
-1. **API限制**: Tushare有调用频率限制，建议使用定时任务错峰更新
-2. **数据时效**: 市值数据每日变化，建议日度更新；财务指标季度更新即可
-3. **数据验证**: L3级行业覆盖率较低，使用时需谨慎
-4. **存储空间**: 每次运行会生成多个文件，建议定期清理历史文件
-
-## 故障排查
-
-### 问题1: Tushare权限不足
-```
-解决方案: 
-1. 捐赠升级积分（推荐）
-2. 使用免费的申万行业数据
-3. 等待积分累计
-```
-
-### 问题2: 网络代理错误
-```
-解决方案:
-1. 检查代理设置
-2. 禁用VPN重试
-3. 使用国内网络环境
-```
-
-### 问题3: 数据缺失
-```
-解决方案:
-1. 启用智能搜索补充
-2. 添加自定义关键词
-3. 手动补充数据
-```
-
-## 更新日志
-
-### v1.0.0 (2026-04-11)
-- 初始版本发布
-- 支持申万行业分类数据获取
-- 实现三层数据补充机制
-- 支持定时任务配置
-
-## 技术支持
-
-- GitHub Issues: [项目地址]
-- 文档: `docs/使用指南.md`
-- 示例: `examples/`
-
-## 许可证
-
-MIT License
-
-## 作者
-
-AI Assistant
+| 模板名称 | 执行频率 | rrule | 适用场景 |
+|---------|---------|-------|---------|
+| 每日更新 | 每天18:00 | `FREQ=DAILY;BYHOUR=18;BYMINUTE=0` | 市值数据更新 |
+| 工作日日报 | 工作日17:00 | `FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=17;BYMINUTE=0` | 每日简要报告 |
+| 每周深度分析 | 每周日20:00 | `FREQ=WEEKLY;BYDAY=SUN;BYHOUR=20;BYMINUTE=0` | 深度分析报告 |
+| 每月财报更新 | 每月1日9:00 | `FREQ=MONTHLY;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0` | 财务指标更新 |
+| 龙头股财报周下载 | 每周六22:00 | `FREQ=WEEKLY;BYDAY=SAT;BYHOUR=22;BYMINUTE=0` | 龙头股财报下载 |
+| 季度财报下载 | 每季度中旬 | `FREQ=MONTHLY;BYMONTH=1,4,7,10;BYMONTHDAY=15;BYHOUR=20;BYMINUTE=0` | 行业财报下载 |
+| 年报集中下载 | 每年5月1日 | `FREQ=YEARLY;BYMONTH=5;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0` | 年度报表下载 |
 
 ---
 
-**最后更新**: 2026-04-15
-**版本**: v1.0.0
+## 环境要求
+
+### 必需依赖
+```bash
+pip install tushare pandas openpyxl
+```
+
+### 财务报表下载额外依赖
+```bash
+pip install requests
+```
+
+### Tushare Token配置
+```bash
+# 方式1: 环境变量（推荐）
+export TUSHARE_TOKEN="your_token_here"
+
+# 方式2: 代码中设置
+import tushare as ts
+ts.set_token("your_token_here")
+```
+
+### Token权限说明
+| 功能 | 最低权限 | 积分要求 |
+|------|---------|---------|
+| 申万行业分类 | 免费账户 | 0 |
+| 股票基础数据 | 免费账户 | 0 |
+| 市值数据 | 基础权限 | 120+ |
+| 财务指标 | 基础权限 | 2000+ |
+| 行业成分股 | 基础权限 | 2000+ |
+| 财务报表下载 | 不需要Token | 0（直接从巨潮获取） |
+
+---
+
+## 使用场景速查
+
+### 场景1: 行业配置策略
+```
+用户: "帮我分析一下哪些行业值得关注"
+```
+AI执行: `python src/cli.py analyze` → 筛选市值大、ROE高的行业
+
+### 场景2: ROE选股
+```
+用户: "找出ROE超过30%的行业龙头"
+```
+AI执行: `analyzer.filter_industries(roe_min=30.0)`
+
+### 场景3: 下载特定公司财报
+```
+用户: "下载贵州茅台2024年年报"
+```
+AI执行: `python src/financial_report_downloader.py --stock 600519 --report-type annual --year 2024`
+
+### 场景4: 批量下载行业财报
+```
+用户: "下载银行业所有公司的最新年报"
+```
+AI执行: `python src/financial_report_downloader.py --industry 银行 --report-type annual --latest`
+
+### 场景5: 配置定时自动下载
+```
+用户: "每周六自动下载龙头股财报"
+```
+AI执行: 调用 `automation_update` 创建定时任务
+
+---
+
+## 故障排查
+
+| 问题 | 原因 | 解决方案 |
+|------|------|---------|
+| Tushare权限不足 | 积分不够 | 捐赠升级积分 |
+| 网络代理错误 | VPN/代理干扰 | 关闭VPN或配置代理白名单 |
+| 巨潮下载失败 | 网络不稳定 | 自动重试3次，检查网络 |
+| 财报搜索为空 | 公司名/代码错误 | 确认6位股票代码 |
+| 定时任务未执行 | rrule格式错误 | 参考上方模板 |
+
+---
+
+## 版本信息
+
+- **版本**: v1.1.0
+- **更新日期**: 2026-04-15
+- **GitHub**: https://github.com/fatliuwei/industry-leader-analysis
