@@ -11,6 +11,7 @@
 - 📊 **全面覆盖** - 511个申万行业（L1/L2/L3级），78.3%数据覆盖率
 - 🔍 **智能识别** - 三层数据补充机制（成分股 → 关键词 → 智能搜索）
 - 📈 **财务分析** - 市值、ROE、净利率、营收增长等关键指标
+- 📑 **报表下载** - 自动下载上市公司财务报表PDF（年报/半年报/季报）
 - 🤖 **定时任务** - 支持每日/每周/每月自动更新
 - 📄 **多格式输出** - CSV、Excel、Markdown报告
 - 🎯 **易于集成** - 可在openclaw、opencode、claude code中使用
@@ -128,6 +129,23 @@ print(high_roe[['行业名称', '龙头股名称', 'ROE(%)', '净利率(%)']])
 
 更多示例请查看 `examples/basic_usage.py`。
 
+### 示例4: 财务报表下载 ⭐ NEW
+
+下载上市公司财务报表PDF文件：
+
+```bash
+# 下载贵州茅台最新年报
+python src/financial_report_downloader.py --stock 600519 --report-type annual --latest
+
+# 下载银行业所有公司最新年报
+python src/financial_report_downloader.py --industry 银行 --report-type annual --latest
+
+# 下载特定股票的所有类型报告
+python src/financial_report_downloader.py --stock 600519 000858 --report-type all --latest
+```
+
+详细文档：`QUICKSTART_FINANCIAL_REPORTS.md`
+
 ## 📊 数据说明
 
 ### 数据字段
@@ -158,12 +176,25 @@ print(high_roe[['行业名称', '龙头股名称', 'ROE(%)', '净利率(%)']])
 
 ### 预设任务
 
+#### 行业龙头股分析
+
 | 任务 | 频率 | 说明 |
 |------|------|------|
 | 每日更新 | 每天18:00 | 更新市值数据 |
 | 每周分析 | 每周日20:00 | 深度分析报告 |
 | 月度财报 | 每月1日9:00 | 更新财务指标 |
 | 季度研究 | 季度中旬 | 投资策略报告 |
+
+#### 财务报表下载 ⭐ NEW
+
+| 任务 | 频率 | 说明 |
+|------|------|------|
+| 季度财报下载 | 每季度中旬 | 下载最新季度报告 |
+| 年报集中下载 | 每年5月1日 | 批量下载上一年度年报 |
+| 重点公司跟踪 | 每月20日 | 跟踪重点公司财报 |
+| 龙头股自动下载 | 每周六 | 自动下载龙头股财报 |
+
+财务报表下载详细配置：`automation/financial_report_schedule.yaml`
 
 ### 自定义任务
 
